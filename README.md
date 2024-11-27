@@ -12,6 +12,7 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 - CSVs are handled weirdly in `encoding/csv` -- why no update record function?
 - Lots of string manipulation and printing
 - First CLI from scratch in Golang, whoo
+- Cobra and `cobra-cli` are very nice to work with from the ground-up.
 
 ### What's next?:
 

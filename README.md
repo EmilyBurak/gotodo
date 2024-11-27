@@ -2,6 +2,8 @@
 
 A to-do list, how novel! Practicing some Golang based on [Dreams of Code's list of golang projects](https://github.com/dreamsofcode-io/goprojects/tree/main/01-todo-list).
 
+![A demonstration of the Gotodo CLI: adding tasks, deleting, completing, and listing uncompleted and all tasks](https://github.com/EmilyBurak/gotodo/blob/main/render1732725257933.gif)
+
 The **Technical Considerations** and **Extra Features** there haven't been addressed yet.
 
 ### Key takeaways:

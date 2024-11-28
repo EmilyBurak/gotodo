@@ -13,6 +13,7 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 - Lots of string manipulation and printing
 - First CLI from scratch in Golang, whoo
 - Cobra and `cobra-cli` are very nice to work with from the ground-up.
+- Scopes and shadowing are tough, golang is nice and typed like that
 
 ### What's next?:
 

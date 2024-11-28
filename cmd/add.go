@@ -51,7 +51,7 @@ var addCmd = &cobra.Command{
 
 		if newFile {
 			// Write the header if the file is empty
-			err = writer.Write([]string{"ID", "Task", "Status", "Deleted"})
+			err = writer.Write([]string{"ID", "Task", "Status", "Deleted", "Pomodoros"})
 			if err != nil {
 				panic(err)
 			}
@@ -64,7 +64,7 @@ var addCmd = &cobra.Command{
 		}
 
 		// Append to front of the slice the new task ID
-		args = append(append(append([]string{fmt.Sprintf("%d", rows)}, args...), "Pending"), "false")
+		args = append(append(append(append([]string{fmt.Sprintf("%d", rows)}, args...), "Pending"), "false"), "0")
 		err = writer.Write(args)
 		if err != nil {
 			panic(err)

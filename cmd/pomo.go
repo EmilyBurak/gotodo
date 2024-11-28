@@ -1,15 +1,11 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -18,7 +14,7 @@ import (
 var pomoCmd = &cobra.Command{
 	Use:   "pomo",
 	Short: "Start a pomodoro timer",
-	Long:  ``,
+	Long:  `Start a pomodoro timer for a flagged duration and task.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		duration, _ := cmd.Flags().GetInt("duration")
 		id, _ := cmd.Flags().GetInt("ID")
@@ -27,6 +23,23 @@ var pomoCmd = &cobra.Command{
 		startTime := time.Now()
 		countdown := time.NewTicker(5 * time.Second)
 
+		file, err := os.OpenFile("tasks.csv", os.O_RDWR, 0644)
+		if err != nil {
+			fmt.Println("Error opening task csv file")
+			return
+		}
+
+		defer file.Close()
+
+		reader := csv.NewReader(file)
+		rows, err := reader.ReadAll() // Read all records from the file
+		if err != nil {
+			fmt.Println("Error reading task csv file")
+			return
+		}
+		var wg sync.WaitGroup
+		done := make(chan bool)
+
 		go func() {
 			for {
 				select {
@@ -34,39 +47,71 @@ var pomoCmd = &cobra.Command{
 					currentTime := time.Now()
 					difference := duration - int(currentTime.Sub(startTime).Seconds())
 					fmt.Println("Time remaining:", difference)
+				case <-done:
+					return
 				}
 			}
 		}()
 
 		fmt.Println("Pomodoro started!")
+		recordCh := make(chan []string)
+		var record []string
 
 		if id != 0 {
-			file, err := os.Open("tasks.csv")
-			if err != nil {
-				fmt.Println("No tasks to complete")
-				return
-			}
-
-			reader := csv.NewReader(file)
-
-			for i := 0; ; i++ {
-				record, err := reader.Read() // Read the next record
-				if err == io.EOF {           // If we have reached the end of the file
+			for i, row := range rows { // Iterate over all records
+				if taskID, err := strconv.Atoi(row[0]); err == nil && taskID == id {
+					wg.Add(1)
+					fmt.Println("Task:", row[1])
+					go func(i int, record []string) {
+						defer wg.Done()
+						rowValue, _ := strconv.Atoi(row[4])
+						row[4] = strconv.Itoa(1 + rowValue)
+						rows[i] = row
+						recordCh <- row
+					}(i, row)
 					break
 				}
-				if err != nil {
-					log.Fatal(err)
-				}
-				if taskID, err := strconv.Atoi(record[0]); err == nil && taskID == id {
-					fmt.Println("Task:", record[1])
-				}
 			}
-
-			file.Close()
 		}
+		record = <-recordCh
 
 		<-pomo.C // Wait for the timer to expire
-		fmt.Println("Pomodoro complete!")
+		done <- true
+
+		wg.Wait()
+
+		// Close the file to open it in truncation mode
+		file.Close()
+
+		// Open the file in truncation mode to clear the contents
+		file, err = os.OpenFile("tasks.csv", os.O_TRUNC, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		file.Close()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// Open the file in read-write mode to write the updated records
+		file, err = os.OpenFile("tasks.csv", os.O_RDWR, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// Write the updated records to the file
+		writer := csv.NewWriter(file)
+		writer.WriteAll(rows)
+		writer.Flush()
+
+		if id != 0 {
+			fmt.Println(record[4] + " Pomodoros completed for task " + string(id) + record[1])
+		} else {
+			fmt.Println("Pomodoro completed!")
+		}
 	},
 }
 

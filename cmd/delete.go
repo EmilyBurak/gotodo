@@ -70,15 +70,10 @@ var deleteCmd = &cobra.Command{
 					return
 				}
 				if record[0] == strconv.Itoa(taskID) {
-
-					fmt.Println("Deleting record...")
 					record[3] = "true"
 					readComplete = true
 				}
 			}
-			// Mark the task as done and break to write the record
-			// csvWriter.Flush()
-			// 	os.Remove("temp.csv")
 			err = csvWriter.Write(record)
 			if err != nil {
 				log.Fatal(err)

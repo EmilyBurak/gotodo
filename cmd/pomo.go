@@ -66,6 +66,12 @@ var pomoCmd = &cobra.Command{
 						defer wg.Done()
 						rowValue, _ := strconv.Atoi(row[4])
 						row[4] = strconv.Itoa(1 + rowValue)
+						if row[5] != "" {
+							pomNeeded, _ := strconv.Atoi(row[5])
+							if pomNeeded == rowValue+1 {
+								row[2] = "done"
+							}
+						}
 						rows[i] = row
 						recordCh <- row
 					}(i, row)

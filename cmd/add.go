@@ -15,6 +15,9 @@ var addCmd = &cobra.Command{
 	Short: "Add a task to the task list",
 	Long:  `Add a task to the task list`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		pomNeeded := cmd.Flag("number").Value.String()
+
 		file, err := os.Open("tasks.csv")
 		newFile := false
 		if err != nil {
@@ -51,7 +54,7 @@ var addCmd = &cobra.Command{
 
 		if newFile {
 			// Write the header if the file is empty
-			err = writer.Write([]string{"ID", "Task", "Status", "Deleted", "Pomodoros Completed"})
+			err = writer.Write([]string{"ID", "Task", "Status", "Deleted", "Pomodoros Completed", "Pomodoros Needed"})
 			if err != nil {
 				panic(err)
 			}
@@ -64,7 +67,7 @@ var addCmd = &cobra.Command{
 		}
 
 		// Append to front of the slice the new task ID
-		args = append(append([]string{fmt.Sprintf("%d", rows)}, args...), "Pending", "false", "0")
+		args = append(append([]string{fmt.Sprintf("%d", rows)}, args[0]), "Pending", "false", "0", pomNeeded)
 		err = writer.Write(args)
 		if err != nil {
 			panic(err)
@@ -75,10 +78,11 @@ var addCmd = &cobra.Command{
 		if err := writer.Error(); err != nil {
 			panic(err)
 		}
-		fmt.Println("Task ID " + strings.Join(args[:len(args)-2], " ") + " added")
+		fmt.Println("Task ID " + strings.Join(args[:len(args)-4], " ") + " added")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
+	addCmd.Flags().StringP("number", "n", "", "pomodoros needed to complete the task")
 }

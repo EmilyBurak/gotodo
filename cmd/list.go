@@ -31,7 +31,7 @@ var listCmd = &cobra.Command{
 		}
 
 		// Print the headers
-		fmt.Printf("%-3s %-30s %-10s %-10s %-3s\n", headers[0], headers[1], headers[2], headers[3], headers[4])
+		fmt.Printf("%-3s %-30s %-10s %-10s %-20s %-3s\n", headers[0], headers[1], headers[2], headers[3], headers[4], headers[5])
 
 		// Loop through the records and print the tasks that are not done or deleted, unless the all flag is set
 		for {
@@ -42,7 +42,10 @@ var listCmd = &cobra.Command{
 			if !All && (record[2] == "done" || record[3] == "true") {
 				continue
 			}
-			fmt.Printf("%-3s %-30s %-10s %-10s %-3s\n", record[0], record[1], record[2], record[3], record[4])
+			if record[5] == "" {
+				record[5] = "N/A"
+			}
+			fmt.Printf("%-3s %-30s %-10s %-10s %-20s %-3s\n", record[0], record[1], record[2], record[3], record[4], record[5])
 		}
 
 	},

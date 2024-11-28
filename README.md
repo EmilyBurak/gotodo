@@ -16,4 +16,5 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 
 ### What's next?:
 
+- Tab output with [tabwriter](https://pkg.go.dev/text/tabwriter)
 - Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)

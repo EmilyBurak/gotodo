@@ -8,6 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+
 	"github.com/spf13/cobra"
 )
 
@@ -19,9 +22,9 @@ var pomoCmd = &cobra.Command{
 		duration, _ := cmd.Flags().GetInt("duration")
 		id, _ := cmd.Flags().GetInt("ID")
 
-		pomo := time.NewTimer(time.Duration(duration) * time.Second)
+		pomo := time.NewTimer(time.Duration(duration) * time.Minute)
 		startTime := time.Now()
-		countdown := time.NewTicker(5 * time.Second)
+		countdown := time.NewTicker(1 * time.Minute)
 
 		file, err := os.OpenFile("tasks.csv", os.O_RDWR, 0644)
 		if err != nil {
@@ -45,7 +48,7 @@ var pomoCmd = &cobra.Command{
 				select {
 				case <-countdown.C:
 					currentTime := time.Now()
-					difference := duration - int(currentTime.Sub(startTime).Seconds())
+					difference := duration - int(currentTime.Sub(startTime).Minutes())
 					fmt.Println("Time remaining:", difference)
 				case <-done:
 					return
@@ -54,7 +57,7 @@ var pomoCmd = &cobra.Command{
 		}()
 
 		fmt.Println("Pomodoro started!")
-		recordCh := make(chan []string)
+		recordCh := make(chan []string, 10)
 		var record []string
 
 		if id != 0 {
@@ -62,7 +65,7 @@ var pomoCmd = &cobra.Command{
 				if taskID, err := strconv.Atoi(row[0]); err == nil && taskID == id {
 					wg.Add(1)
 					fmt.Println("Task:", row[1])
-					go func(i int, record []string) {
+					go func(i int, record []string) error {
 						defer wg.Done()
 						rowValue, _ := strconv.Atoi(row[4])
 						row[4] = strconv.Itoa(1 + rowValue)
@@ -72,17 +75,26 @@ var pomoCmd = &cobra.Command{
 								row[2] = "done"
 							}
 						}
-						rows[i] = row
+						// rows[i] = row
 						recordCh <- row
+						return err
 					}(i, row)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 					break
+				}
+				if err != nil {
+					fmt.Println(err)
+					return
 				}
 			}
 		}
-		record = <-recordCh
 
 		<-pomo.C // Wait for the timer to expire
 		done <- true
+		close(done) // Close the done channel
 
 		wg.Wait()
 
@@ -107,16 +119,34 @@ var pomoCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
+		defer file.Close()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		// Write the updated records to the file
 		writer := csv.NewWriter(file)
 		writer.WriteAll(rows)
 		writer.Flush()
 
+		if writer.Error() != nil {
+			fmt.Println(writer.Error())
+			return
+		}
+
+		notifApp := app.New()
 		if id != 0 {
+			record = <-recordCh
 			fmt.Println(record[4] + " Pomodoros completed for task " + string(id) + record[1])
+			notif := fyne.NewNotification("Pomodoro completed!", record[4]+" Pomodoros completed for task "+string(id)+record[1])
+			notifApp.SendNotification(notif)
+			close(recordCh)
 		} else {
+			close(recordCh)
 			fmt.Println("Pomodoro completed!")
+			notif := fyne.NewNotification("Pomodoro completed!", "Time to take a break!")
+			notifApp.SendNotification(notif)
 		}
 	},
 }

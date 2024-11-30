@@ -3,11 +3,11 @@ package cmd
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
 
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +16,13 @@ var deleteCmd = &cobra.Command{
 	Short: "Delete a task from the task list",
 	Long:  `Delete a task from the task list by providing the task ID.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		name := cmd.Flag("task").Value.String()
+		id := cmd.Flag("ID").Value.String()
+		if name == "" && id == "0" {
+			fmt.Println("Please provide the task ID or name to delete the task")
+			return
+		}
+
 		file, err := os.Open("tasks.csv")
 		if err != nil {
 			fmt.Println("No tasks to delete")
@@ -34,48 +41,43 @@ var deleteCmd = &cobra.Command{
 		csvReader := csv.NewReader(file)
 		csvWriter := csv.NewWriter(tempFile)
 
-		taskID, err := strconv.Atoi(args[0])
+		taskID, err := strconv.Atoi(id)
 		if err != nil {
 			fmt.Println("Invalid task ID")
 			return
 		}
 
-		readComplete := false
+		rows, err := csvReader.ReadAll()
+		if err != nil {
+			fmt.Println("Error reading task csv file")
+			return
+		}
 
-		// Loop through the records to find the task ID and mark it as done
-		for i := 0; ; i++ {
-			record, err := csvReader.Read()
-			if err == io.EOF {
-				if readComplete {
-					break
-				}
-				// Task ID not found in records, so return
-				log.Println("Task ID not found")
-				csvWriter.Flush()
-				os.Remove("temp.csv")
-				return
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
-			if record[0] == strconv.Itoa(taskID) {
-				if record[3] == "true" {
+		recordTaskNames := make([]string, 0)
+
+		for _, row := range rows {
+			if id, err := strconv.Atoi(row[0]); err == nil && id == taskID {
+				recordTaskNames = append(recordTaskNames, row[1])
+				if row[3] == "true" {
 					// Task already deleted=> Do not write the record
 					fmt.Println("Task already deleted")
 					csvWriter.Flush()
 					os.Remove("temp.csv")
 					return
 				}
-				if record[0] == strconv.Itoa(taskID) {
-					record[3] = "true"
-					readComplete = true
+				if row[0] == strconv.Itoa(taskID) {
+					row[3] = "true"
 				}
+			} else {
+				searchResult := fuzzy.Find(name, recordTaskNames)
+				log.Println("Search Result: ", searchResult)
 			}
-			err = csvWriter.Write(record)
+			err = csvWriter.Write(row)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
+
 		csvWriter.Flush()
 		if csvWriter.Error() != nil {
 			log.Fatal(csvWriter.Error())
@@ -93,4 +95,6 @@ var deleteCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
+	deleteCmd.Flags().IntP("ID", "i", 0, "ID of the task")
+	deleteCmd.Flags().StringP("task", "t", "", "Task to delete")
 }

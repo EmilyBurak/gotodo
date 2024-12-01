@@ -56,21 +56,30 @@ var deleteCmd = &cobra.Command{
 		recordTaskNames := make([]string, 0)
 
 		for _, row := range rows {
-			if id, err := strconv.Atoi(row[0]); err == nil && id == taskID {
-				recordTaskNames = append(recordTaskNames, row[1])
-				if row[3] == "true" {
-					// Task already deleted=> Do not write the record
-					fmt.Println("Task already deleted")
-					csvWriter.Flush()
-					os.Remove("temp.csv")
-					return
+			log.Println("Row: ", row)
+			if len(row) != 0 {
+				if id, err := strconv.Atoi(row[0]); err == nil && id == taskID {
+					recordTaskNames = append(recordTaskNames, row[1])
+					if row[3] == "true" {
+						// Task already deleted=> Do not write the record
+						fmt.Println("Task already deleted")
+						csvWriter.Flush()
+						os.Remove("temp.csv")
+						return
+					}
+					if row[0] == strconv.Itoa(taskID) {
+						// Mark as deleted
+						row[3] = "true"
+						break
+					}
 				}
-				if row[0] == strconv.Itoa(taskID) {
-					row[3] = "true"
+				if row[0] != strconv.Itoa(taskID) {
+					recordTaskNames = append(recordTaskNames, row[1])
+					searchResult := fuzzy.Find(name, recordTaskNames)
+					if len(searchResult) != 0 {
+						log.Println("Search Result: ", searchResult[0])
+					}
 				}
-			} else {
-				searchResult := fuzzy.Find(name, recordTaskNames)
-				log.Println("Search Result: ", searchResult)
 			}
 			err = csvWriter.Write(row)
 			if err != nil {

@@ -16,6 +16,4 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 
 ### What's next?:
 
-gs
-
 - Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)

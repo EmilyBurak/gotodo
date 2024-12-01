@@ -14,8 +14,8 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 - First CLI from scratch in Golang, whoo
 - Cobra and `cobra-cli` are very nice to work with from the ground-up.
 - Scopes and shadowing are tough, golang is nice and typed like that
+- Managing concurrency is made easier by Go, but it still can be hard to get ahold of all the moving parts.
 
 ### What's next?:
 
-- Tab output with [tabwriter](https://pkg.go.dev/text/tabwriter)
 - Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)

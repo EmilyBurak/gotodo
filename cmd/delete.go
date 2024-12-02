@@ -18,6 +18,7 @@ var deleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		name := cmd.Flag("task").Value.String()
 		id := cmd.Flag("ID").Value.String()
+
 		if name == "" && id == "0" {
 			fmt.Println("Please provide the task ID or name to delete the task")
 			return
@@ -56,10 +57,12 @@ var deleteCmd = &cobra.Command{
 		recordTaskNames := make([]string, 0)
 
 		for _, row := range rows {
+			log.Println("Iteration: ", row)
 			log.Println("Row: ", row)
 			if len(row) != 0 {
 				if id, err := strconv.Atoi(row[0]); err == nil && id == taskID {
 					recordTaskNames = append(recordTaskNames, row[1])
+					log.Println("Task ID found: ", id)
 					if row[3] == "true" {
 						// Task already deleted=> Do not write the record
 						fmt.Println("Task already deleted")
@@ -70,14 +73,16 @@ var deleteCmd = &cobra.Command{
 					if row[0] == strconv.Itoa(taskID) {
 						// Mark as deleted
 						row[3] = "true"
-						break
 					}
 				}
 				if row[0] != strconv.Itoa(taskID) {
 					recordTaskNames = append(recordTaskNames, row[1])
 					searchResult := fuzzy.Find(name, recordTaskNames)
 					if len(searchResult) != 0 {
-						log.Println("Search Result: ", searchResult[0])
+						log.Println("Search result: ", searchResult)
+						row[3] = "true"
+						// clear recordTaskNames to avoid deleting the same task multiple times
+						recordTaskNames = []string{}
 					}
 				}
 			}
@@ -98,12 +103,16 @@ var deleteCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Println("Task of task ID " + args[0] + " deleted")
+		if id != "0" {
+			fmt.Println("Task of task ID " + id + " deleted")
+		} else {
+			fmt.Println("Task " + name + " deleted")
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
 	deleteCmd.Flags().IntP("ID", "i", 0, "ID of the task")
-	deleteCmd.Flags().StringP("task", "t", "", "Task to delete")
+	deleteCmd.Flags().StringP("task", "t", "", "Name of task to delete")
 }

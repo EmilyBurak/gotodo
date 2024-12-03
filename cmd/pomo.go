@@ -40,6 +40,7 @@ var pomoCmd = &cobra.Command{
 			fmt.Println("Error reading task csv file")
 			return
 		}
+
 		var wg sync.WaitGroup
 		done := make(chan bool)
 
@@ -57,6 +58,7 @@ var pomoCmd = &cobra.Command{
 		}()
 
 		fmt.Println("Pomodoro started!")
+
 		recordCh := make(chan []string, 10)
 		var record []string
 
@@ -75,7 +77,6 @@ var pomoCmd = &cobra.Command{
 								row[2] = "done"
 							}
 						}
-						// rows[i] = row
 						recordCh <- row
 						return err
 					}(i, row)
@@ -135,6 +136,7 @@ var pomoCmd = &cobra.Command{
 			return
 		}
 
+		// Fyne notification for desktop and completion message for CLI
 		notifApp := app.New()
 		if id != 0 {
 			record = <-recordCh

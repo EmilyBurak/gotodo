@@ -14,7 +14,7 @@ import (
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a task from the task list",
-	Long:  `Delete a task from the task list by providing the task ID.`,
+	Long:  `Delete a task from the task list by providing the task ID or name.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := cmd.Flag("task").Value.String()
 		id := cmd.Flag("ID").Value.String()
@@ -57,12 +57,9 @@ var deleteCmd = &cobra.Command{
 		recordTaskNames := make([]string, 0)
 
 		for _, row := range rows {
-			log.Println("Iteration: ", row)
-			log.Println("Row: ", row)
 			if len(row) != 0 {
 				if id, err := strconv.Atoi(row[0]); err == nil && id == taskID {
 					recordTaskNames = append(recordTaskNames, row[1])
-					log.Println("Task ID found: ", id)
 					if row[3] == "true" {
 						// Task already deleted=> Do not write the record
 						fmt.Println("Task already deleted")
@@ -82,6 +79,7 @@ var deleteCmd = &cobra.Command{
 						log.Println("Search result: ", searchResult)
 						row[3] = "true"
 						// clear recordTaskNames to avoid deleting the same task multiple times
+						// maybe due to fuzzy search, multiple tasks are found, this will delete all of them, TODO: fix
 						recordTaskNames = []string{}
 					}
 				}

@@ -44,7 +44,7 @@ var completeCmd = &cobra.Command{
 		// Loop through the records to find the task ID and mark it as done
 		for i := 0; ; i++ {
 			record, err := csvReader.Read()
-			if err == io.EOF {
+			if err == io.EOF { // End of file
 				if taskFound {
 					break
 				}

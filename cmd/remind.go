@@ -14,10 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// func generateAWSScheduleExpression(hour string, minute string) string {
-// 	return "cron(" + minute + " " + hour + " * * ? *)"
-// }
-
 var remindCmd = &cobra.Command{
 	Use:   "remind",
 	Short: "Invoke a lambda function to remind you about a task",

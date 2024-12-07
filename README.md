@@ -16,4 +16,6 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 
 ### What's next?:
 
+- Implement breaks between pomodoros
 - Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)
+- Write tests

@@ -17,5 +17,7 @@ The **Technical Considerations** and **Extra Features** there haven't been addre
 ### What's next?:
 
 - Implement breaks between pomodoros
-- Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)
+- Break code up into functions more
 - Write tests
+- Deployment and DevOps stuff
+- Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)

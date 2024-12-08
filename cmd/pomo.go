@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"text/tabwriter"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -15,12 +16,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func pomodoroCountdown(countdown *time.Ticker, duration int, startTime time.Time, done chan bool) error {
+func pomodoroCountdown(duration int, done chan bool) error {
 	bar := progressbar.NewOptions(duration*60,
 		progressbar.OptionSetElapsedTime(true),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionSetWidth(15),
-		progressbar.OptionSetDescription("Pomodoro Progress"),
+		progressbar.OptionSetDescription("Progress"),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]=[reset]",
 			SaucerHead:    "[green]>[reset]",
@@ -37,17 +38,7 @@ func pomodoroCountdown(countdown *time.Ticker, duration int, startTime time.Time
 	}(bar, duration)
 	for {
 		select {
-		// TODO: Remove ticker in favor of a progress bar? Both are redundant and the progress bar is more intuitive
-		case <-countdown.C:
-			currentTime := time.Now()
-			difference := duration - int(currentTime.Sub(startTime).Minutes())
-			if difference < 0 {
-				fmt.Println("Start/current time difference is less than 0 for some reason, difference is:", difference)
-				return nil
-			}
-			fmt.Println("\nTime remaining: " + strconv.Itoa(difference) + " minute(s)")
 		case <-done:
-			fmt.Println("Timer done!")
 			return nil
 		}
 	}
@@ -57,7 +48,7 @@ func recordLoop(rows [][]string, id int, recordCh chan []string, wg *sync.WaitGr
 	for i, row := range rows { // Iterate over all records
 		if taskID, err := strconv.Atoi(row[0]); err == nil && taskID == id {
 			wg.Add(1)
-			fmt.Println("Task:", row[1])
+			fmt.Println("\nWorking on Pomodoros for Task:", row[1])
 			go func(i int, record []string) error {
 				defer wg.Done()
 				rowValue, _ := strconv.Atoi(row[4])
@@ -89,12 +80,10 @@ func progressBySecond(bar *progressbar.ProgressBar, duration int) {
 
 func takeBreak(breakDuration int, sessionPomos int) {
 	breakTimer := time.NewTimer(time.Duration(breakDuration) * time.Minute)
-	breakCountdown := time.NewTicker(1 * time.Minute)
 	done := make(chan bool) // Create a channel to signal when the timer is done
-	fmt.Println("Session Break #" + strconv.Itoa(sessionPomos) + " started for " + strconv.Itoa(breakDuration) + " minutes")
-	startTime := time.Now()
+	fmt.Println("\nSession Break #" + strconv.Itoa(sessionPomos) + " started for " + strconv.Itoa(breakDuration) + " minutes")
 	go func() {
-		err := pomodoroCountdown(breakCountdown, breakDuration, startTime, done)
+		err := pomodoroCountdown(breakDuration, done)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -126,11 +115,17 @@ var pomoCmd = &cobra.Command{
 
 		sessionPomos := 0
 
+		friendlyID := strconv.Itoa(id)
+		if id == 0 {
+			friendlyID = "No task specified"
+		}
+
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		fmt.Fprintln(w, "Pomodoro Timer for Task ID:", friendlyID)
+		w.Flush()
+
 		for i := 0; i < pomoAmount; i++ {
 			pomo := time.NewTimer(time.Duration(duration) * time.Minute)
-			startTime := time.Now()
-			countdown := time.NewTicker(1 * time.Minute)
-
 			file, err := os.OpenFile("tasks.csv", os.O_RDWR, 0644)
 			if err != nil {
 				fmt.Println("Error opening task csv file")
@@ -149,7 +144,7 @@ var pomoCmd = &cobra.Command{
 			var wg sync.WaitGroup
 			done := make(chan bool)
 
-			go pomodoroCountdown(countdown, duration, startTime, done) // ticker for countdown
+			go pomodoroCountdown(duration, done)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -211,7 +206,8 @@ var pomoCmd = &cobra.Command{
 			if id != 0 {
 				// var breakWg sync.WaitGroup
 				record = <-recordCh
-				fmt.Println(record[4] + " Pomodoros completed for task " + strconv.Itoa(id) + " " + record[1])
+				fmt.Println("Work session completed!")
+				fmt.Println("\n" + record[4] + " Pomodoro work sessions completed for task " + strconv.Itoa(id) + " " + record[1])
 				notif := fyne.NewNotification("Pomodoro completed!", record[4]+" total Pomodoros completed for task "+strconv.Itoa(id)+record[1]+"\nTime to take a break!")
 				close(recordCh)
 				sessionPomos = 1 + sessionPomos
@@ -219,11 +215,9 @@ var pomoCmd = &cobra.Command{
 					notif = fyne.NewNotification("Long break!", "Time to take a long break!")
 					notifApp.SendNotification(notif)
 					takeBreak(longBreak, sessionPomos)
-					fmt.Println("Break timer expired")
 				} else if sessionPomos%4 != 0 {
 					notifApp.SendNotification(notif)
 					takeBreak(breakDuration, sessionPomos)
-					fmt.Println("Break timer over!")
 				}
 			} else {
 				close(recordCh)
@@ -234,13 +228,11 @@ var pomoCmd = &cobra.Command{
 					notif = fyne.NewNotification("Long break!", "Time to take a long break!")
 					notifApp.SendNotification(notif)
 					takeBreak(longBreak, sessionPomos)
-					fmt.Println("Break timer expired")
 					return // Exit the loop
 				} else if sessionPomos%4 != 0 {
 					notif = fyne.NewNotification("Break time!", "Time to take a break!")
 					notifApp.SendNotification(notif)
 					takeBreak(breakDuration, sessionPomos)
-					fmt.Println("Break timer over!")
 				}
 				notifApp.SendNotification(notif)
 			}
@@ -256,8 +248,3 @@ func init() {
 	pomoCmd.Flags().IntP("longbreak", "l", 3, "Duration of the long break in minutes")
 	pomoCmd.Flags().IntP("pomos", "p", 4, "Number of pomodoros before a long break")
 }
-
-// breakDoneChan := make(chan bool, breakDuration)
-// breakDoneChan <- true
-// close(breakDoneChan)
-// breakWg.Wait()

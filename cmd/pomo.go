@@ -11,12 +11,33 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
 
 func pomodoroCountdown(countdown *time.Ticker, duration int, startTime time.Time, done chan bool) error {
+	bar := progressbar.NewOptions(duration*60,
+		progressbar.OptionSetElapsedTime(true),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionSetWidth(15),
+		progressbar.OptionSetDescription("Pomodoro Progress"),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}))
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(bar *progressbar.ProgressBar, duration int) error {
+		defer wg.Done()
+		progressBySecond(bar, duration*60)
+		return nil
+	}(bar, duration)
 	for {
 		select {
+		// TODO: Remove ticker in favor of a progress bar? Both are redundant and the progress bar is more intuitive
 		case <-countdown.C:
 			currentTime := time.Now()
 			difference := duration - int(currentTime.Sub(startTime).Minutes())
@@ -24,7 +45,7 @@ func pomodoroCountdown(countdown *time.Ticker, duration int, startTime time.Time
 				fmt.Println("Start/current time difference is less than 0 for some reason, difference is:", difference)
 				return nil
 			}
-			fmt.Println("Time remaining: " + strconv.Itoa(difference) + " minute(s)")
+			fmt.Println("\nTime remaining: " + strconv.Itoa(difference) + " minute(s)")
 		case <-done:
 			fmt.Println("Timer done!")
 			return nil
@@ -59,6 +80,13 @@ func recordLoop(rows [][]string, id int, recordCh chan []string, wg *sync.WaitGr
 	}
 }
 
+func progressBySecond(bar *progressbar.ProgressBar, duration int) {
+	for i := 0; i < duration; i++ {
+		bar.Add(1)
+		time.Sleep(1 * time.Second)
+	}
+}
+
 func takeBreak(breakDuration int, sessionPomos int) {
 	breakTimer := time.NewTimer(time.Duration(breakDuration) * time.Minute)
 	breakCountdown := time.NewTicker(1 * time.Minute)
@@ -66,7 +94,6 @@ func takeBreak(breakDuration int, sessionPomos int) {
 	fmt.Println("Session Break #" + strconv.Itoa(sessionPomos) + " started for " + strconv.Itoa(breakDuration) + " minutes")
 	startTime := time.Now()
 	go func() {
-
 		err := pomodoroCountdown(breakCountdown, breakDuration, startTime, done)
 		if err != nil {
 			fmt.Println(err)

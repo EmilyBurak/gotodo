@@ -15,7 +15,7 @@ var addCmd = &cobra.Command{
 	Long:  `Add a task to the task list`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		pomNeeded := cmd.Flag("number").Value.String()
+		pomNeeded := cmd.Flag("sessions").Value.String()
 
 		file, err := os.Open("tasks.csv")
 		newFile := false
@@ -53,7 +53,7 @@ var addCmd = &cobra.Command{
 
 		if newFile {
 			// Write the header if the file is empty
-			err = writer.Write([]string{"ID", "Task", "Status", "Deleted", "Pomodoros Completed", "Pomodoros Needed"})
+			err = writer.Write([]string{"ID", "Task", "Status", "Deleted", "Working Sessions Completed", "Working Sessions Needed"})
 			if err != nil {
 				panic(err)
 			}
@@ -83,5 +83,5 @@ var addCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(addCmd)
-	addCmd.Flags().StringP("number", "n", "", "pomodoros needed to complete the task")
+	addCmd.Flags().StringP("sessions", "s", "", "Pomodoro working sessions needed to complete the task")
 }

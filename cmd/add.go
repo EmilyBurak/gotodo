@@ -3,9 +3,11 @@ package cmd
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +17,13 @@ var addCmd = &cobra.Command{
 	Long:  `Add a task to the task list`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		pomNeeded := cmd.Flag("sessions").Value.String()
+		var (
+			name        string
+			isPomNeeded bool
+			confirm     bool
+		)
+
+		pomNeeded := ""
 
 		file, err := os.Open("tasks.csv")
 		newFile := false
@@ -65,8 +73,66 @@ var addCmd = &cobra.Command{
 			rows = 1
 		}
 
-		// Append to front of the slice the new task ID
-		args = append(append([]string{fmt.Sprintf("%d", rows)}, args[0]), "Pending", "false", "0", pomNeeded)
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("Input task name").
+					Prompt("Task name: ").
+					Value(&name),
+			),
+			huh.NewGroup(
+				huh.NewConfirm().
+					Title("Do you want to set a number of Pomodoro working sessions needed for this task?").
+					Affirmative("Yes").
+					Negative("No").
+					Value(&isPomNeeded),
+			),
+		)
+
+		err = form.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if isPomNeeded {
+			form = huh.NewForm(
+				huh.NewGroup(
+					huh.NewInput().
+						Title("Input number of Pomodoro working sessions needed").
+						Value(&pomNeeded),
+				),
+			)
+
+			err = form.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		form = huh.NewForm(
+			huh.NewGroup(
+				huh.NewConfirm().
+					TitleFunc(func() string {
+						return "Do you want to add this task?" + "\n" + "Task name: " + name
+					}, &name).
+					Affirmative("Yes").
+					Negative("No").
+					Value(&confirm),
+			),
+		)
+
+		err = form.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !confirm {
+			fmt.Println("Task not added")
+			return
+		}
+
+		args = append(append([]string{fmt.Sprintf("%d", rows)}, name), "Pending", "false", "0", pomNeeded)
+
 		err = writer.Write(args)
 		if err != nil {
 			panic(err)

@@ -2,22 +2,40 @@
 
 A to-do list, how novel! Practicing some Golang based on [Dreams of Code's list of golang projects](https://github.com/dreamsofcode-io/goprojects/tree/main/01-todo-list).
 
-The **Technical Considerations** and **Extra Features** there haven't been addressed yet.
+### Built with:
+
+- [cobra](https://github.com/spf13/cobra-cli/) for the CLI,
+- [fyne](https://pkg.go.dev/fyne.io/fyne/v2@v2.5.2) for desktop notifications,
+- [fuzzy](https://pkg.go.dev/github.com/lithammer/fuzzysearch@v1.1.8/fuzzy) for fuzzy searching,
+- [progressbar](https://pkg.go.dev/github.com/schollz/progressbar/v3@v3.17.1) for guess what, a progress bar on the pomodoro subcommand,
+- and [viper](https://pkg.go.dev/github.com/spf13/viper@v1.19.0) for config management.
+
+( [terminalizer](https://www.terminalizer.com/) used for example gif-ing. )
+
+---
+
+_Listing example:_
+![Demonstration of a terminal app that lists tasks both with plaintext output and an interactive interface option](./render1733721680580.gif)
 
 ### Key takeaways:
 
 - How golang opens, closes, writes and reads from files, including permissions.
 - CSVs are handled weirdly in `encoding/csv` -- why no update record function?
-- Lots of string manipulation and printing
-- First CLI from scratch in Golang, whoo
-- Cobra and `cobra-cli` are very nice to work with from the ground-up.
-- Scopes and shadowing are tough, golang is nice and typed like that
+- Lots of string manipulation and printing.
+- First CLI from scratch in Golang, whoo.
+- `cobra` and `cobra-cli` are very nice to work with from the ground-up.
+- Scopes and shadowing are tough, golang is nice and typed and it was occasionally tough moving from a lot of Python.
 - Managing concurrency is made easier by Go, but it still can be hard to get ahold of all the moving parts.
+- Using a debugger for concurrent operations is helpful but reading the debugger output can be tough.
+- Note to self: keep track of what is being exported and not. It can bite you later.
+- `bubbletea` is super fun to mess around with once you get in the mindset of the Elm architecture paradigm!
 
 ### What's next?:
 
-- Implement breaks between pomodoros
 - Break code up into functions more
 - Write tests
-- Deployment and DevOps stuff
-- Convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea)
+- Build out and integrate the `remind` subcommand more.
+- Move to a proper DB
+- Flocking
+- Fully convert to a TUI with [bubbletea](https://github.com/charmbracelet/bubbletea) including launching cobra subcommands from bubbletea
+- Deployment and DevOps stuff, after all I am a DevOps engineer <3

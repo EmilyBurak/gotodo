@@ -149,7 +149,7 @@ var pomoCmd = &cobra.Command{
 				fmt.Println(err)
 			}
 
-			go fmt.Println("Pomodoro started!")
+			go fmt.Println("Work session started!")
 
 			recordCh := make(chan []string, 10)
 			var record []string

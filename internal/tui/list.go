@@ -30,7 +30,7 @@ func (t Task) Title() string {
 }
 
 func (t Task) Description() string {
-	return t.Status
+	return "Status: " + t.Status + " // " + "Deleted: " + t.Deleted + " // " + "Pomodoros: " + t.Pomodoros + " // " + "Pomodoros Needed: " + t.PomodorosNeeded
 }
 
 type Model struct {

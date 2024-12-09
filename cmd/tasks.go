@@ -10,7 +10,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "tasks",
 	Short: "A task manager CLI",
-	Long:  `A task manager CLI built with Cobra that allows you to add, list, complete, and delete tasks.`,
+	Long:  `A task manager CLI built with Cobra that allows you to add, list, complete, and delete tasks and to do pomodoros.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

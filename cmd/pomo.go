@@ -97,12 +97,29 @@ func takeBreak(breakDuration int, sessionPomos int) {
 	fmt.Println("Break over!")
 }
 
+func updateTaskFile(rows [][]string) error {
+	// Open the file in truncation mode to clear the contents
+	fmt.Println("Updating task file")
+	file, err := os.OpenFile("tasks.csv", os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write the updated records to the file
+	writer := csv.NewWriter(file)
+	writer.WriteAll(rows)
+	writer.Flush()
+	fmt.Println("Task file updated")
+	return writer.Error()
+}
+
 var pomoCmd = &cobra.Command{
 	Use:   "pomo",
 	Short: "Start a pomodoro timer",
 	Long:  `Start a pomodoro timer for a flagged duration and task.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Break this up into smaller functions
+		// TODO: Break out notification logic into a separate function
 		// TODO: More desktop notifs?
 		// TODO: Is it pomodoros or sessions completed to track?
 		// TODO: Clean up print statements and code
@@ -179,25 +196,10 @@ var pomoCmd = &cobra.Command{
 				return
 			}
 
-			// Open the file in read-write mode to write the updated records
-			file, err = os.OpenFile("tasks.csv", os.O_RDWR, 0644)
+			err = updateTaskFile(rows)
+
 			if err != nil {
 				fmt.Println(err)
-				return
-			}
-			defer file.Close()
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			// Write the updated records to the file
-			writer := csv.NewWriter(file)
-			writer.WriteAll(rows)
-			writer.Flush()
-
-			if writer.Error() != nil {
-				fmt.Println(writer.Error())
 				return
 			}
 

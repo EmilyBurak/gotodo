@@ -72,7 +72,7 @@ func recordLoop(rows [][]string, id int, recordCh chan []string, wg *sync.WaitGr
 }
 
 func progressBySecond(bar *progressbar.ProgressBar, duration int) {
-	for i := 0; i < duration; i++ {
+	for range duration {
 		bar.Add(1)
 		time.Sleep(1 * time.Second)
 	}
